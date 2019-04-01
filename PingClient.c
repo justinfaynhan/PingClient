@@ -42,6 +42,7 @@ int main (int argc, char** argv) {
     servaddr.sin_port = htons (atoi (argv[2])); 
     servaddr.sin_family = AF_INET; 
       
+    // Create socket and set time out value to TIME_OUT.
     sockfd = socket (AF_INET, SOCK_DGRAM, 0); 
     struct timeval tv = {TIME_OUT, 0};
     setsockopt (sockfd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof (tv));
@@ -61,7 +62,7 @@ int main (int argc, char** argv) {
             (struct sockaddr*)NULL, sizeof (servaddr)); 
         clock_t begin = clock();
 
-        // Waiting for response.
+        // Waiting for response. Time out after TIME_OUT seconds.
         int recvlen = recvfrom (sockfd, buffer, sizeof (buffer), 0, 
             (struct sockaddr*)NULL, NULL); 
         printf("ping to %s, seq = %d, ", argv[1], i);
