@@ -23,7 +23,7 @@
 /* Configure as appropriate */
 #define NUM_PINGS 10
 #define TIME_OUT 1
-#define BUFFFER_SIZE 100
+#define BUFFER_SIZE 1024
   
 int main (int argc, char** argv) {    
     char buffer[BUFFER_SIZE]; 
@@ -44,12 +44,16 @@ int main (int argc, char** argv) {
       
     // Create socket and set time out value to TIME_OUT.
     sockfd = socket (AF_INET, SOCK_DGRAM, 0); 
+    if ((sockfd = socket (AF_INET, SOCK_DGRAM, 0)) < 0) {
+        perror ("Error : Making new socket failed.");
+        exit (EXIT_FAILURE);
+    }
     struct timeval tv = {TIME_OUT, 0};
     setsockopt (sockfd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof (tv));
         
     if (connect (sockfd, (struct sockaddr *)&servaddr, sizeof (servaddr)) < 0) { 
-        fprintf (stderr, "Error : Connect Failed \n"); 
-        exit (0); 
+        fprintf (stderr, "Error : Connecting socket failed."); 
+        exit (EXIT_FAILURE); 
     } 
 
     double maxRTT = 0;
@@ -58,19 +62,19 @@ int main (int argc, char** argv) {
     
     /* Send NUM_PINGS datagram pings to server.*/
     for (int i = 1; i <= NUM_PINGS; i++) {
+        clock_t begin = clock();
         sendto (sockfd, message, strlen (message), 0, 
             (struct sockaddr*)NULL, sizeof (servaddr)); 
-        clock_t begin = clock();
 
         // Waiting for response. Time out after TIME_OUT seconds.
         int recvlen = recvfrom (sockfd, buffer, sizeof (buffer), 0, 
-            (struct sockaddr*)NULL, NULL); 
-        printf("ping to %s, seq = %d, ", argv[1], i);
+            (struct sockaddr*)NULL, sizeof (servaddr)); 
+        printf("ping to %s, seq = %d ", argv[1], i);
         if (recvlen >= 0) {
             clock_t end = clock();   
 
             // Calculate RTT info.         
-            double time_elapsed = (double)(end - begin) / 
+            double time_elapsed = ((double)end - (double)begin) / 
                 (CLOCKS_PER_SEC / 1000);
             if (time_elapsed > maxRTT) 
                 maxRTT = time_elapsed;
